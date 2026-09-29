@@ -128,42 +128,65 @@
   const media = gsap.matchMedia();
 
   media.add("(prefers-reduced-motion: no-preference)", function () {
-    gsap.from(".hero-text > *", {
-      opacity: 0, y: 20, duration: 1, stagger: 0.1, ease: "power3.out", clearProps: "all"
-    });
-    gsap.from(".hero-media", {
-      opacity: 0, y: 24, duration: 1.2, ease: "power3.out", clearProps: "all"
-    });
-    // A leitura permanece estável; apenas a fotografia acompanha a rolagem.
-    gsap.to(".hero-photo img", {
-      yPercent: 2, scale: 1.06, ease: "none",
-      scrollTrigger: { trigger: ".hero-photo", start: "top top", end: "bottom top", scrub: 1 }
-    });
-    gsap.utils.toArray(".about-media, .about-text, .services-heading, .process-intro, .result, .testimonial, .format-card, .faq-grid, .cta-inner").forEach(function (element) {
-      gsap.from(element, {
-        opacity: 0.2, y: 22, duration: 0.9, ease: "power3.out", clearProps: "all",
-        scrollTrigger: { trigger: element, start: "top 94%", end: "top 73%", scrub: 0.6, once: true }
+    function revealFromSide(element, direction, options) {
+      const settings = options || {};
+      return gsap.from(element, {
+        // Compensate for the current translation when ScrollTrigger recalculates.
+        x: function () {
+          const bounds = element.getBoundingClientRect();
+          const currentX = Number(gsap.getProperty(element, "x")) || 0;
+          return direction < 0
+            ? -(bounds.right - currentX + 32)
+            : window.innerWidth - (bounds.left - currentX) + 32;
+        },
+        autoAlpha: 0,
+        duration: 0.9,
+        ease: "power3.out",
+        scrollTrigger: {
+          trigger: settings.trigger || element,
+          start: settings.hero ? "top 95%" : "clamp(top 92%)",
+          end: settings.hero ? "bottom top" : "clamp(top 62%)",
+          // The first viewport enters on load; subsequent content follows scroll.
+          scrub: settings.hero ? false : 0.6,
+          once: true,
+          invalidateOnRefresh: true
+        }
+      });
+    }
+
+    const revealGroups = [
+      { selector: ".hero-text", direction: -2, hero: true },
+      { selector: ".hero-media", direction: 2, hero: true },
+      { selector: ".highlights", direction: -2 },
+      { selector: ".about-media", direction: -2 },
+      { selector: ".about-text", direction: 2 },
+      { selector: ".services-heading > *" },
+      { selector: ".service-navigation", direction: 2 },
+      { selector: ".specialty-grid", direction: -2 },
+      { selector: ".process-intro > *", direction: -2 },
+      { selector: ".section > .container > .section-intro:not(.services-heading)" },
+      { selector: ".result" },
+      { selector: ".testimonial" },
+      { selector: ".format-card" },
+      { selector: ".faq-item", direction: 1 },
+      { selector: ".cta-photo", direction: -1 },
+      { selector: ".cta-inner", direction: 1 },
+      { selector: ".footer-grid > div" },
+      { selector: ".footer-bottom", direction: -1 }
+    ];
+    revealGroups.forEach(function (group) {
+      gsap.utils.toArray(group.selector).forEach(function (element, index) {
+        const direction = group.direction || (index % 2 === 0 ? -1 : 1);
+        revealFromSide(element, direction, { hero: group.hero });
       });
     });
-    gsap.from(".specialty", {
-      opacity: 0.25, y: 18, stagger: 0.08, duration: 0.7, ease: "power3.out", clearProps: "all",
-      scrollTrigger: { trigger: track, start: "top 92%", once: true }
-    });
+
     gsap.utils.toArray(".step").forEach(function (step) {
       const content = step.querySelectorAll(".step-num, h3, p");
       const progress = step.querySelector(".step-rail > span");
-      const timeline = gsap.timeline({
-        scrollTrigger: {
-          trigger: step,
-          start: "top 78%",
-          end: "top 58%",
-          scrub: 0.6,
-          once: true
-        }
+      content.forEach(function (element) {
+        revealFromSide(element, 1, { trigger: step });
       });
-      timeline.fromTo(content, { autoAlpha: 0, y: 14 }, {
-        autoAlpha: 1, y: 0, duration: 1, stagger: 0.12, ease: "power2.out"
-      }, 0);
       ScrollTrigger.create({
         trigger: step,
         start: "top 78%",
