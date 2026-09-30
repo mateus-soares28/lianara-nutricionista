@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://lianara-prochnow-nutricionista.vercel.app/sitemap.xml
